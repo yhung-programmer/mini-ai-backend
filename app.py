@@ -1,55 +1,48 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import webbrowser
-import speech_recognition as sr
-from googletrans import Translator
+from deep_translator import GoogleTranslator
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-
-# --- Translator ---
-translator = Translator()
 
 # =======================
 # 🤖 Assistant endpoint
 # =======================
 @app.route("/assistant", methods=["POST"])
 def assistant():
-    data = request.json
+    data = request.get_json()
     query = data.get("query", "").lower()
-    response = "I didn't understand that."
 
-    if "youtube" in query:
-        webbrowser.open("https://www.youtube.com")
-        response = "Opening YouTube"
-    elif "play music" in query:
-        webbrowser.open("https://open.spotify.com")
-        response = "Playing music"
-    elif "search" in query:
-        search_term = query.replace("search", "").strip()
-        url = f"https://www.google.com/search?q={search_term}"
-        webbrowser.open(url)
-        response = f"Searching for {search_term}"
+    response = {"text": f"You said: {query}", "url": None}
 
-    # Just return response (no server TTS)
-    return jsonify({"response": response})
+    # 🔹 Handle "open X" commands
+    if query.startswith("open "):
+        site = query.replace("open ", "").strip()
 
+        websites = {
+            "youtube": "https://www.youtube.com",
+            "facebook": "https://www.facebook.com",
+            "twitter": "https://twitter.com",
+            "instagram": "https://www.instagram.com",
+            "google": "https://www.google.com",
+            "github": "https://github.com",
+            "gmail": "https://mail.google.com",
+            "tiktok": "https://www.tiktok.com",
+        }
 
-# =======================
-# 🎤 Speech recognition
-# =======================
-@app.route("/speech", methods=["GET"])
-def speech_to_text():
-    recognizer = sr.Recognizer()
-    with sr.Microphone() as source:
-        print("Listening...")
-        audio = recognizer.listen(source)
+        if site in websites:
+            response = {"text": f"Open {site.title()}", "url": websites[site]}
+        else:
+            response = {"text": f"Open {site.title()}", "url": f"https://{site}.com"}
 
-    try:
-        text = recognizer.recognize_google(audio)
-        return jsonify({"text": text})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
+    # 🔹 Handle "search X" commands
+    elif query.startswith("search "):
+        search_term = query.replace("search ", "").strip()
+        search_url = f"https://www.google.com/search?q={search_term}"
+        response = {"text": f"Search results for {search_term}", "url": search_url}
+
+    return jsonify(response)
+
 
 
 # =======================
@@ -59,16 +52,21 @@ def speech_to_text():
 def translate_text():
     data = request.json
     text = data.get("text")
-    dest_lang = data.get("target_lang", "fr")  # default French if not chosen
+    dest_lang = data.get("target_lang", "fr")  # default = French
 
     if not text:
         return jsonify({"error": "No text provided"}), 400
 
     try:
-        translation = translator.translate(text, dest=dest_lang)
-        return jsonify({"translated": translation.text})
+        translated = GoogleTranslator(source="auto", target=dest_lang).translate(text)
+        return jsonify({"translated": translated})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"status": "Backend is running ✅"})
 
 
 if __name__ == "__main__":

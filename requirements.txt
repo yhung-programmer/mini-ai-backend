@@ -1,7 +1,5 @@
-
 Flask
-flask-cors
 gunicorn
-pyttsx3
-SpeechRecognition
-googletrans==4.0.0-rc1
+flask-cors
+deep-translator
+requests
