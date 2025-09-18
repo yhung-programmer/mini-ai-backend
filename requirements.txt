@@ -1,8 +1,7 @@
-flask_cors
-flask
-webbrowser
-speech_recognition
+
+Flask
+flask-cors
+gunicorn
 pyttsx3
-googletrans
-
-
+SpeechRecognition
+googletrans==4.0.0-rc1
