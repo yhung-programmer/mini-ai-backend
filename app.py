@@ -1,15 +1,11 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import pyttsx3
 import webbrowser
 import speech_recognition as sr
 from googletrans import Translator
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
-
-# --- Voice engine ---
-engine = pyttsx3.init()
 
 # --- Translator ---
 translator = Translator()
@@ -35,10 +31,7 @@ def assistant():
         webbrowser.open(url)
         response = f"Searching for {search_term}"
 
-    # Speak response
-    engine.say(response)
-    engine.runAndWait()
-
+    # Just return response (no server TTS)
     return jsonify({"response": response})
 
 
@@ -79,6 +72,4 @@ def translate_text():
 
 
 if __name__ == "__main__":
-    # Both features now run on one server
     app.run(debug=True, host="0.0.0.0", port=5000)
-
